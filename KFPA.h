@@ -208,6 +208,6 @@ string fingerprint(string str)
 		if (M[i] >= 0)Y += "1";
 		else Y += "0";
 	}
-	cout << Y << endl;
+	//cout << Y << endl;
 	return Y;
 }
