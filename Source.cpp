@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <algorithm>
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -11,23 +12,129 @@
 //#include "KFPA.h"
 using namespace std;
 
-/*Global Variables*/
-string queryword[100];
-vector<string>fingerprint_q;
+/*---------------------------------------Global Variables---------------------------------------*/
+string			Dictionary[1000];		//All keyword from dataset, remove the same words
+vector<string>	fingerprint_w;
+int				realnum_key = 0;		//Real number of keywords
+string			queryword[100];			//Query word
+vector<string>	fingerprint_q;			//Query word's fingerprint
+int				realnum_que = 0;		//Real number of query keywords
+
+/*Get Dataset from csv*/
+map<string, string> file_index;			//file_id、paper(file) name
+string				temp_index, temp_title;
+int					paper_count = 0;	//count how many paper in excel
+
+struct paper_key {
+	string keyword[4];
+};
+paper_key				temp_k;
+map<string, paper_key>	file_keyword;	//file_id、paper(file)'s keyword*4
+
+int *KM, *QM;
+int *CKI;
+/*---------------------------------------Global Variables---------------------------------------*/
+
 
 /* User Input query word */
 void Query()	
 {
 	cout << endl << "Input query word：";
-	int c = 0;
-	while (cin >> queryword[c])
+	while (cin >> queryword[realnum_que])
 	{
-		fingerprint_q.push_back(fingerprint(queryword[c]));
+		fingerprint_q.push_back(fingerprint(queryword[realnum_que]));
 		//cout << fingerprint_q[c] << endl;
-		c++;
+		realnum_que++;
 	}
 	cout << "End of input query word" << endl << endl;
-	getchar();		//Get char，because of Ctrl+Z
+	//getchar();		//Get char，because of Ctrl+Z
+}
+
+/*Get Dataset from csv*/
+void readDataset()
+{
+	ifstream inFile("paper_keyword.csv", ios::in);//建立檔案物件，由物件呼叫member func
+	if (inFile.is_open())	cout << "open_successfully" << endl;
+	else					cout << "fail" << endl;
+
+	string lineStr;
+	//讀進來的資料分別存在這邊
+	vector<string> index;
+	vector<string> title;
+	vector<string> keyword1;
+	vector<string> keyword2;
+	vector<string> keyword3;
+	vector<string> keyword4;
+
+	while (getline(inFile, lineStr))
+	{
+		cout << lineStr << endl;
+
+		stringstream ss(lineStr);
+		string str;
+		
+		getline(ss, str, ',');
+		index.push_back(str);
+		temp_index = str;
+		paper_count++;
+
+		getline(ss, str, ',');
+		title.push_back(str);
+		temp_title = str;
+		file_index.insert(pair<string, string>(temp_index, temp_title));
+
+		getline(ss, str, ',');
+		keyword1.push_back(str);
+		transform(str.begin(), str.end(), str.begin(), ::tolower);
+		temp_k.keyword[0] = str;
+
+
+		getline(ss, str, ',');
+		keyword2.push_back(str);
+		transform(str.begin(), str.end(), str.begin(), ::tolower);
+		temp_k.keyword[1] = str;
+
+		getline(ss, str, ',');
+		keyword3.push_back(str);
+		transform(str.begin(), str.end(), str.begin(), ::tolower);
+		temp_k.keyword[2] = str;
+
+		getline(ss, str, ',');
+		keyword4.push_back(str);
+		transform(str.begin(), str.end(), str.begin(), ::tolower);
+		temp_k.keyword[3] = str;
+		file_keyword.insert(pair<string, paper_key>(temp_index, temp_k));
+	}
+
+	//for (auto it = file_index.begin(); it != file_index.end(); it++)	cout << it->first << " " << it->second << endl;
+	for (auto it = file_keyword.begin(); it != file_keyword.end(); it++)	cout << it->first << " " << it->second.keyword[0] << " " << it->second.keyword[1] << " " << it->second.keyword[2] << " " << it->second.keyword[3] << endl;
+	
+	for (auto it = file_keyword.begin(); it != file_keyword.end(); it++)	//Put keyword into Dictionary
+	{
+		for (int j = 0; j < 4; j++)
+			Dictionary[realnum_key++] = it->second.keyword[j];
+	}
+
+	for (int i = 0; i<realnum_key; i++)			//Remove Duplicates From Dictionary
+	{
+		for (int j = i + 1; j<realnum_key; j++)
+		{
+			if (!(Dictionary[i].compare(Dictionary[j])))
+			{
+				for (int k = j + 1; k<realnum_key; k++)
+					Dictionary[k - 1] = Dictionary[k];
+				realnum_key--;		//array length -1
+				j--;				//repeat check again
+			}
+		}
+	}
+	cout << "Real number of keywords:" << realnum_key << endl;
+	for (int k = 0; k < realnum_key; k++)			//Generate Dictionary fingerprint
+	{
+		fingerprint_w.push_back(fingerprint(Dictionary[k]));
+		cout << Dictionary[k] << ",";
+	}
+	inFile.close();
 }
 
 void convertUnCharToStr(char* str, unsigned char* UnChar, int ucLen)
@@ -39,6 +146,7 @@ void convertUnCharToStr(char* str, unsigned char* UnChar, int ucLen)
 		printf(str + i * 2, "%02x", UnChar[i]);
 	}
 }
+
 /*
 string hextotwo(string str)		//16進制轉二進制
 {
@@ -110,6 +218,8 @@ string fingerprint(string str)
 	return Y;
 }
 */
+
+/* Count Hamming Distance */
 int HamingD(string a, string b)
 {
 	int HD = 0;
@@ -118,6 +228,68 @@ int HamingD(string a, string b)
 		if (a[i] != b[i])HD++;
 	}
 	return HD;
+}
+
+/* Copy temp_KM、temp_QM into Global variables */
+void setQKM(int* t_k, int* t_q)
+{
+	KM = (int*)malloc(sizeof(int)*realnum_key);
+	memcpy(KM, t_k, sizeof(int)*realnum_key);
+
+	QM = (int*)malloc(sizeof(int)*realnum_key);
+	memcpy(QM, t_q, sizeof(int)*realnum_key);
+}
+
+/* Generate KM、QM */
+void GenerateKQM()
+{
+	int* temp_KM = (int*)malloc(sizeof(int)*realnum_key);
+	int* temp_QM = (int*)malloc(sizeof(int)*realnum_key);
+	for (int i = 0; i < realnum_key; i++)			//Initialize
+	{
+		temp_KM[i] = 1;
+		temp_QM[i] = 0;
+	}
+
+	for (int i = 0; i < realnum_key; i++)
+	{
+		for (int j = 0; j < realnum_que; j++)
+		{
+			if (!(Dictionary[i].compare(queryword[j]))) temp_QM[i] = 1;
+		}
+	}
+	cout << endl;
+	for (int i = 0; i < realnum_key; i++)
+	{
+		cout << temp_QM[i];
+	}
+	cout << endl << endl;
+	
+	setQKM(temp_KM, temp_QM);
+	free(temp_KM);
+	free(temp_QM);
+}
+
+/*Function 1 -- QKMatch*/
+int* QKMatch(int* QM, int* KM, int len) {	//len is the length of KM
+
+	int tempsize = realnum_key;
+	int CKI[100] = { 0 };
+	//memset(CKI,-1,sizeof(int)*len);//initialize array to -1
+
+	int j = 0;
+	for (int i = 0; i<len; i++)
+	{
+		if (QM[i] == KM[i] && KM[i] == 1)
+		{
+			CKI[j] = i;
+			j++;// length of CKI
+		}
+
+	}
+	int* new_arr = (int*)malloc(sizeof(int)*j);
+	memcpy(new_arr, CKI, sizeof(int)*j);
+	return new_arr;
 }
 
 int main(void)
@@ -129,79 +301,28 @@ int main(void)
 	string fingerprint_w = fingerprint(word);
 	//cout << fingerprint_w;
 
-	/*Get Dataset from csv*/
-	map<string, string> file_index;
-	string temp_index, temp_title;
-	struct paper_key {
-		string keyword[4];
-	};
-	paper_key temp_k;
-	map<string, paper_key> file_keyword;
-	int i = 0;
-		ifstream inFile("paper_keyword.csv", ios::in);//建立檔案物件，由物件呼叫member func
-	if (inFile.is_open()) {
-		cout << "open_successfully" << endl;
-	}
-	else {
-		cout << "fail" << endl;
-	}
-	string lineStr;
-	//讀進來的資料分別存在這邊
-	vector<string> index;
-	vector<string> title;
-	vector<string> keyword1;
-	vector<string> keyword2;
-	vector<string> keyword3;
-	vector<string> keyword4;
-
-	//這邊想做把vec轉成arr，好像用memcpy就可以了，但記憶體大小調整不好
-	/*char arr_index[4 * 30];      memset(arr_index, '\0', sizeof(char) * 4 * 30);
-	char arr_title[121 * 30];    memset(arr_title, '\0', sizeof(char) * 121 * 30);
-	char arr_keyword1[20 * 30];  memset(arr_keyword1, '\0', sizeof(char) * 20 * 30);
-	char arr_keyword2[20 * 30];  memset(arr_keyword2, '\0', sizeof(char) * 20 * 30);
-	char arr_keyword3[20 * 30];  memset(arr_keyword3, '\0', sizeof(char) * 20 * 30);
-	char arr_keyword4[20 * 30];  memset(arr_keyword4, '\0', sizeof(char) * 20 * 30);
-	*/
-	while (getline(inFile, lineStr))
-	{
-		cout << lineStr << endl;
-		//cout<<sizeof(lineStr)<<endl;
-
-		stringstream ss(lineStr);
-		string str;
-		//vector<string> lineArray;
-		getline(ss, str, ',');
-		index.push_back(str);
-		temp_index = str;
-		
-
-		getline(ss, str, ',');
-		title.push_back(str);
-		temp_title = str;
-		file_index.insert(pair<string, string>(temp_index, temp_title));
-
-		getline(ss, str, ',');
-		keyword1.push_back(str);
-		temp_k.keyword[0] = str;
-
-		getline(ss, str, ',');
-		keyword2.push_back(str);
-		temp_k.keyword[1] = str;
-
-		getline(ss, str, ',');
-		keyword3.push_back(str);
-		temp_k.keyword[2] = str;
-
-		getline(ss, str, ',');
-		keyword4.push_back(str);
-		temp_k.keyword[3] = str;
-		file_keyword.insert(pair<string, paper_key>(temp_index, temp_k));
-	}
-	for (auto it = file_index.begin(); it != file_index.end(); it++)	cout << it->first << " " << it->second << endl;
-	for (auto it = file_keyword.begin(); it != file_keyword.end(); it++)	cout << it->first << " " << it->second.keyword[0] << " " << it->second.keyword[1] << " " << it->second.keyword[2] << " " << it->second.keyword[3] << endl;
+	/* Get Dataset from csv */
+	readDataset();
 
 	/* User Input query word */
 	Query();
+
+	/* Generate KM、QM */
+	GenerateKQM();
+	for (int i = 0; i<realnum_key; i++) {
+		cout << KM[i];
+	}
+	cout << endl;
+	for (int i = 0; i<realnum_key; i++) {
+		cout << QM[i];
+	}
+
+	/* QKMatch */
+	CKI = QKMatch(QM, KM, realnum_key);
+	for (int i = 0; i < sizeof(CKI)-1; i++) {
+		cout << CKI[i] << ",";
+	}
+
 
 	system("pause");
 	return 0;
