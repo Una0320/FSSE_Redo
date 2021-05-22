@@ -61,7 +61,6 @@ void Query()
 	while (cin >> queryword[realnum_que])
 	{
 		fingerprint_q.push_back(fingerprint(queryword[realnum_que]));
-		//cout << fingerprint_q[c] << endl;
 		realnum_que++;
 	}
 	cout << "End of input query word" << endl << endl;
@@ -71,18 +70,11 @@ void Query()
 /*Get Dataset from csv*/
 void readDataset()
 {
-	ifstream inFile("paper_keyword.csv", ios::in);//建立檔案物件，由物件呼叫member func
-	if (inFile.is_open())	cout << "Open_successfully" << endl;
-	else					cout << "Fail" << endl;
+	ifstream inFile("paper_keyword.csv", ios::in);		//Build File Object，File object call member function
+	if (inFile.is_open())	cout << "Open_successfully" << endl << endl;
+	else					cout << "Fail" << endl << endl;
 
 	string lineStr;
-	//讀進來的資料分別存在這邊
-	vector<string> index;
-	vector<string> title;
-	vector<string> keyword1;
-	vector<string> keyword2;
-	vector<string> keyword3;
-	vector<string> keyword4;
 
 	while (getline(inFile, lineStr))
 	{
@@ -92,35 +84,30 @@ void readDataset()
 		string str;
 		
 		getline(ss, str, ',');
-		index.push_back(str);
 		temp_index = str;
 		paper_count++;
 
 		getline(ss, str, ',');
-		title.push_back(str);
 		temp_title = str;
 		file_index.insert(pair<string, string>(temp_index, temp_title));
 
 		getline(ss, str, ',');
-		keyword1.push_back(str);
 		transform(str.begin(), str.end(), str.begin(), ::tolower);
 		temp_k.keyword[0] = str;
 
 
 		getline(ss, str, ',');
-		keyword2.push_back(str);
 		transform(str.begin(), str.end(), str.begin(), ::tolower);
 		temp_k.keyword[1] = str;
 
 		getline(ss, str, ',');
-		keyword3.push_back(str);
 		transform(str.begin(), str.end(), str.begin(), ::tolower);
 		temp_k.keyword[2] = str;
 
 		getline(ss, str, ',');
-		keyword4.push_back(str);
 		transform(str.begin(), str.end(), str.begin(), ::tolower);
 		temp_k.keyword[3] = str;
+
 		file_keyword.insert(pair<string, paper_key>(temp_index, temp_k));
 	}
 
@@ -134,7 +121,7 @@ void readDataset()
 			Dictionary[realnum_key++] = it->second.keyword[j];
 	}
 
-	for (int i = 0; i<realnum_key; i++)			//Remove Duplicates From Dictionary
+	for (int i = 0; i<realnum_key; i++)				//Remove Duplicates From Dictionary
 	{
 		for (int j = i + 1; j<realnum_key; j++)
 		{
@@ -160,10 +147,7 @@ void readDataset()
 int HamingD(string a, string b)
 {
 	int HD = 0;
-	for (int i = 0; i < 128; i++)
-	{
-		if (a[i] != b[i])HD++;
-	}
+	for (int i = 0; i < 128; i++)	if (a[i] != b[i])	HD++;
 	return HD;
 }
 
@@ -182,13 +166,14 @@ void GenerateKQM()
 {
 	int* temp_KM = (int*)malloc(sizeof(int)*realnum_key);
 	int* temp_QM = (int*)malloc(sizeof(int)*realnum_key);
+
 	for (int i = 0; i < realnum_key; i++)			//Initialize
 	{
 		temp_KM[i] = 1;
 		temp_QM[i] = 0;
 	}
 
-	for (int i = 0; i < realnum_key; i++)
+	for (int i = 0; i < realnum_key; i++)			//Compare Dictionary and Queryword；If(Keywrod == Query)，QM = 1
 	{
 		for (int j = 0; j < realnum_que; j++)
 		{
@@ -196,10 +181,7 @@ void GenerateKQM()
 		}
 	}
 	cout << endl;
-	for (int i = 0; i < realnum_key; i++)
-	{
-		cout << temp_QM[i];
-	}
+	for (int i = 0; i < realnum_key; i++)	cout << temp_QM[i];
 	cout << endl << endl;
 	
 	setQKM(temp_KM, temp_QM);
@@ -210,90 +192,39 @@ void GenerateKQM()
 /* Set SI */
 void BuildSI()
 {
-	// Build first node
-	id_score_ *head = new id_score_();
-	head->next = NULL;
-	id_score_ *current = head;
-
-	//file_keyword：file_id、paper(file)'s keyword*4
-	int temp_realkey = 0;
+	//<map>file_keyword：file_id、paper(file)'s keyword*4
+	//SI：<Dictionary(keyword), id_sc(file_id, file's score)>
 	for (auto it = file_keyword.begin(); it != file_keyword.end(); it++)	//Put keyword into Dictionary
 	{
 		int file_i = atoi((it->first).c_str());								//file_id(string->int)
-
-		//SI：<Dictionary(keyword), id_sc(file_id, file's score)>
-		double x = (5 - 1) * rand() / (RAND_MAX + 1.0) + 1;					//random score(range：5~1)
+		double   x = (5 - 1) * rand() / (RAND_MAX + 1.0) + 1;					//random score(range：5~1)
 		temp_idcs.id = it->first;											//put file_id into temp_idcs(struct,id)
 
 		for (int j = 0; j < 4; j++)
 		{
 			if (j == 0)
 			{
-				//Una method
 				temp_idcs.score = x;										//put random score into temp_idcs(struct,score)
 				SI.insert(pair<string, id_sc>(it->second.keyword[j], temp_idcs));		//insert(file_id<string>, word's score<double>)
-
-																						//Cliff method
-				current->id = file_i;
-				current->score = 4.5;
-				current->next = new id_score_();
-				current = current->next;  //現在指到哪
-				current->next = NULL;
 			}
 			else if (j == 1)
 			{
 				temp_idcs.score = x;
 				SI.insert(pair<string, id_sc>(it->second.keyword[j], temp_idcs));
-
-				current->id = file_i;
-				current->score = 3.2;
-				current->next = new id_score_();
-				current = current->next;  //現在指到哪
-				current->next = NULL;
 			}
 			else if (j == 2)
 			{
 				temp_idcs.score = x;
 				SI.insert(pair<string, id_sc>(it->second.keyword[j], temp_idcs));
-
-				current->id = file_i;
-				current->score = 2.6;
-				current->next = new id_score_();
-				current = current->next;  //現在指到哪
-				current->next = NULL;
 			}
 			else
 			{
 				temp_idcs.score = 1.7;
 				SI.insert(pair<string, id_sc>(it->second.keyword[j], temp_idcs));
-
-				current->id = file_i;
-				current->score = 1.7;
-				current->next = new id_score_();
-				current = current->next;  //現在指到哪
-				current->next = NULL;
 			}
 		}
 
 	}
-	/* Print linked list */
-	/*current = head;
-	while (true) {
-	cout << "File id：" << current->id << "\t score：" << current->score << endl;  //印目前的節點
-	current = current->next;	//印完後要印下一個節點的內容
-	if (current == NULL) {		//current為NULL的時候停下來
-	break;
-	}
-	}*/
-
-	/* Clear linked list */
-	while (head != 0) {            // Traversal
-		id_score_ *current = head;
-		head = head->next;
-		delete current;
-		current = 0;
-	}
-
 	/* Print map--SI */
 	for (auto it = SI.begin(); it != SI.end(); it++)	cout << it->first << " " << it->second.id << " , " << it->second.score << " " << endl;
 }
@@ -307,12 +238,7 @@ int* QKMatch(int* QM, int* KM, int len) {	//len is the length of KM
 
 	for (int i = 0; i<len; i++)
 	{
-		if (QM[i] == KM[i] && KM[i] == 1)
-		{
-			CKI[j] = i;
-			j++;// length of CKI
-		}
-
+		if (QM[i] == KM[i] && KM[i] == 1)	CKI[j++] = i;
 	}
 	int* new_arr = (int*)malloc(sizeof(int)*j);
 	memcpy(new_arr, CKI, sizeof(int)*j);
@@ -330,30 +256,13 @@ int* DMatch(int *CKI, int cki_len) {
 
 	for (int i = 0; i < cki_len; i++)
 	{
-		//針對每個word去找
 		multimap<string, id_sc>::iterator m;
 		m = SI.find(Dictionary[CKI[i]]);
 		for (int k = 0; k != SI.count(Dictionary[CKI[i]]); k++, m++)
 		{
-			cout << m->first << "--" << m->second.id << endl;
+			cout << m->first << "\t-- " << m->second.id << endl;
 			CFS[j++] = atoi((m->second.id).c_str());
-			//j++;
 		}
-		/*if (SI[CKI[i]].next != NULL)//表示這個word是有出現在某個document中的
-		{
-			id_score *ptr;
-			ptr = SI[CKI[i]].next;
-			while (ptr != NULL) {
-				CFS[j] = ptr->id;
-				ptr = ptr->next;
-				j++;
-			}
-
-		}
-		else//表示這個word沒有出現在任何document中
-		{
-			continue;
-		}*/
 	}
 
 	//j：means how many id in CFS
@@ -370,28 +279,21 @@ void Cscore()
 	{
 		double total_score = 0;
 		string current_fileid = to_string(CFS[i]);
-		//先找到當前的paper
 		for (int j = 0; j < _msize(CKI) / sizeof(CKI[0]); j++)
 		{
 			//SI：<Dictionary(keyword), id_sc(file_id, file's score)>
-			//針對每個word去找
-			
 			//file_keyword -- file_id、paper(file)'s keyword*4
 			multimap<string, id_sc>::iterator m;
 			m = SI.find(Dictionary[CKI[j]]);
-			//cout << "KEY\tELEMENT\n";
 			for (int k = 0; k != SI.count(Dictionary[CKI[j]]); k++, m++)
 			{
 				if (m->second.id == current_fileid) total_score += m->second.score;
-				//cout << m->first << "--" << m->second.id << endl;
-				//CFS[j++] = atoi((m->second.id).c_str());
-				//j++;
 			}
 		}
 		RList.insert(pair<string, double>(current_fileid, total_score));
 	}
 	cout << endl << "RList：" << endl;
-	for (auto it = RList.begin(); it != RList.end(); it++)	cout << it->first << " " << it->second << endl;
+	for (auto it = RList.begin(); it != RList.end(); it++)	cout << it->first << "\t" << it->second << endl << endl;
 }
 
 /* Rank，cannot use map<value> sort, so need other function */
@@ -399,6 +301,7 @@ void printVec(vector< pair<string, double> > &vec) {
 	vector<pair<string, double> >::iterator it;
 	for (it = vec.begin(); it != vec.end(); ++it) {
 		cout << it->first << " : " << it->second << endl;
+		cout << "Paper：" << file_index.at(it->first) << endl;
 	}
 }
 bool comp_by_value(pair<string, double> &p1, pair<string, double> &p2) {
@@ -416,6 +319,7 @@ void Rank()
 	sort(vec.begin(), vec.end(), comp_by_value);
 	printVec(vec);
 }
+
 int main(void)
 {
 	/* Get Dataset from csv */
@@ -437,13 +341,13 @@ int main(void)
 	/* Search(QKMatch -> DMatch -> CScore -> Rank) */
 	/* QKMatch */
 	CKI = QKMatch(QM, KM, realnum_key);
-	for (int i = 0; i < (_msize(CKI) / sizeof(CKI[0])); i++)	cout << "CKI：" << CKI[i] << ",";
-	cout << endl;
+	//for (int i = 0; i < (_msize(CKI) / sizeof(CKI[0])); i++)	cout << "\nCKI：" << CKI[i] << ",";
+	//cout << endl;
 
 	/* DMatch */
 	CFS = DMatch(CKI, _msize(CKI) / sizeof(CKI[0]));
-	for (int i = 0; i < (_msize(CFS) / sizeof(CFS[0])); i++)	cout << "CFS：" << CFS[i] << ",";
-	cout << endl;
+	//for (int i = 0; i < (_msize(CFS) / sizeof(CFS[0])); i++)	cout << "\nCFS：" << CFS[i] << ",";
+	//cout << endl;
 
 	/* CSore */
 	Cscore();
