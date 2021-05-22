@@ -1,0 +1,30 @@
+1,An Effective Approach to Controller Placement in Software Defned Wide Area Networks,controller,placement,SDN,WAN
+2,Research and Design of Network Servers Monitoring System Based on SNMP,network,SNMP,server,MIB
+3,On the Capacitated Controller Placement Problem in Software Defined Networks,SDN,placement,controller,scheduling
+4,An Effective Load Balanced Controller Placement Approach in Software-Defined WANs,WAN,SDN,controller,delay
+5,Virtualized server infrastructure for resilient voice communication service,disaster,resiliency,server,placement
+6,On Stochastic Controller Placement in Software-Defined Wireless Networks,IoT,Delays,Programming,placement
+7,An Internet Application-Driven Cache Placement Algorithm for Software-Defined Information-Centric Networking,networking,placement,Servers,Delays
+8,Controller Placement for Minimum Control Traffic in OpenDaylight Clustering,Control systems,Bandwidth,Network ,Topology
+9,Performance impact of virtual machine placement in a datacenter,Placement,Servers,Interference,Virtualization
+10,Searchable Public Key Encryption Supporting Semantic Multi-Keywords Search,encryption,searchable,keyword,Cloud
+11,A Bin Packing Heuristic for On-Line Service Placement and Performance Control,IoT,web,optimization,Network
+12,Traffic-Aware Placement of NFV Middleboxes,Middleboxes,Routing,Servers,Software
+13,Power-Efficient Virtual Machine Placement and Migration in Data Centers,Efficiency,Delay,Network,Servers
+14,Optimal Cache Placement and Migration for Improving the Performance of Virtualized SAND,DASH,SAND,SDN,virtualizztion
+15,An Energy-Aware Algorithm for Optimizing Resource Allocation in Software Defined Network,Servers,Routing,Topology,Network
+16,Software-Based Networks: Leveraging High-Performance NFV Platforms to Meet Future Communication Challenges,Internet,networks,Software,Routing
+17,Development of an Ultra-low power WSN gateway for outdoor deployments,Batteries,Gateway,Sensor,Networks
+18,Virtualized Control Over Fog: Interplay Between Reliability and Latency,Control,fog,IoT,latency
+19,A Strategic Sensor Placement?for a Smart Farm Water Sprinkler System: A Computational Model,placement,IoT,IoT,deployment
+20,Analysis of Internet Gateway Placement Problem in Heterogeneous Wireless Networks for Machine to Machine Communication,Internet,IoT,Placement,network
+21,Resource Aware Placement of IoT Devices in Fog Computing,Cloud,Fog,IoT,Edge
+22,Joint Content Placement and Storage Allocation in C-RANs for IoT Sensing Service,Caching,Cloud,placement,Internet
+23,An Application Placement Technique for Concurrent IoT Applications in Edge and Fog Computing Environments,Fog,edge,Internet,placement
+24,Energy-Aware Placement for IoT-Service Function Chain,Virtualization,Placement,IoT,VNF
+25,A Multi-Objective Data Placement Method for IoT Applications Over Big Data Using NSGA-II,IoT,placement,Network,Applications
+26,Dynamic Component Placement and Request Scheduling for IoT Big Data Streaming,edge,IoT,Servers,Internet
+27,Optimal placement algorithm (OPA) for IoT over ICN,Servers,Optimization,Placement,Security
+28,Optimizing the Placement of Indoor Thermal Climate Sensors of an Iot Solution,IoT,SolidWorks,sensors,Internet
+29,Virtual Network Function Placement in IoT Network,IoT,Bandwidth,Sensors,Cloud
+30,Dynamic VNF Chains Placement for Mobile IoT Applications,IoT,Edge,Optimization,Cloud
