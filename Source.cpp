@@ -7,6 +7,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 #include <map>
 #include "KFPA.h"
 using namespace std;
@@ -19,6 +20,20 @@ string			queryword[100];			//Query word
 vector<string>	fingerprint_q;			//Query word's fingerprint
 int				realnum_que = 0;		//Real number of query keywords
 
+/* Let program run 10 times */
+string exampleset[10][10] = {
+	{ "iot" },
+	{ "iot", "web" },
+	{ "iot", "web", "controller" },
+	{ "iot", "web", "controller", "vnf" },
+	{ "iot", "web", "controller", "vnf", "routing" },
+	{ "iot", "web", "controller", "vnf", "routing", "network" },
+	{ "iot", "web", "controller", "vnf", "routing", "network", "topology" },
+	{ "iot", "web", "controller", "vnf", "routing", "network", "topology", "delay" },
+	{ "iot", "web", "controller", "vnf", "routing", "network", "topology", "delay", "servers" },
+	{ "iot", "web", "controller", "vnf", "routing", "network", "topology", "delay", "servers", "cloud" }
+};
+int example_flag = 0;
 /*Get Dataset from csv*/
 map<string, string> file_index;			//file_id、paper(file) name
 string				temp_index, temp_title;
@@ -58,6 +73,7 @@ map<string, double> RList;				//RList：Remember file_id and total score
 void Query()	
 {
 	cout << endl << "Input query word：";
+	realnum_que = 0;
 	while (cin >> queryword[realnum_que])
 	{
 		fingerprint_q.push_back(fingerprint(queryword[realnum_que]));
@@ -67,6 +83,18 @@ void Query()
 	//getchar();		//Get char，because of Ctrl+Z
 }
 
+void Query2()
+{
+	cout << "Input Query word by Example Set" << endl;
+	realnum_que = 0;
+	for (int i = 0; i < example_flag + 1; i++)
+	{
+		queryword[i] = exampleset[example_flag][i];
+		fingerprint_q.push_back(fingerprint(queryword[i]));
+		realnum_que++;
+	}
+	example_flag++;
+}
 /*Get Dataset from csv*/
 void readDataset()
 {
@@ -181,8 +209,6 @@ void GenerateKQM()
 		}
 	}
 	cout << endl;
-	for (int i = 0; i < realnum_key; i++)	cout << temp_QM[i];
-	cout << endl << endl;
 	
 	setQKM(temp_KM, temp_QM);
 	free(temp_KM);
@@ -226,7 +252,7 @@ void BuildSI()
 
 	}
 	/* Print map--SI */
-	for (auto it = SI.begin(); it != SI.end(); it++)	cout << it->first << " " << it->second.id << " , " << it->second.score << " " << endl;
+	//for (auto it = SI.begin(); it != SI.end(); it++)	cout << it->first << " " << it->second.id << " , " << it->second.score << " " << endl;
 }
 
 /* Function 1 -- QKMatch */
@@ -237,9 +263,8 @@ int* QKMatch(int* QM, int* KM, int len) {	//len is the length of KM
 	int j = 0;
 
 	for (int i = 0; i<len; i++)
-	{
 		if (QM[i] == KM[i] && KM[i] == 1)	CKI[j++] = i;
-	}
+
 	int* new_arr = (int*)malloc(sizeof(int)*j);
 	memcpy(new_arr, CKI, sizeof(int)*j);
 	return new_arr;
@@ -300,7 +325,7 @@ void Cscore()
 void printVec(vector< pair<string, double> > &vec) {
 	vector<pair<string, double> >::iterator it;
 	for (it = vec.begin(); it != vec.end(); ++it) {
-		cout << it->first << " : " << it->second << endl;
+		//cout << it->first << " : " << it->second << endl;
 		cout << "Paper：" << file_index.at(it->first) << endl;
 	}
 }
@@ -322,45 +347,61 @@ void Rank()
 
 int main(void)
 {
+	clock_t query_time, builddata_time;
+	
 	/* Get Dataset from csv */
 	readDataset();
 
-	/* User Input query word */
-	Query();
-
-	/* Generate KM、QM */
-	GenerateKQM();
-	for (int i = 0; i<realnum_key; i++) cout << KM[i];
-	cout << endl;
-	for (int i = 0; i<realnum_key; i++)	cout << QM[i];
-	cout << endl;
-
 	/* Build SI */
 	BuildSI();
+	builddata_time = clock();
+	cout << "Build SI Time：" << double(builddata_time) / CLOCKS_PER_SEC << "s" << endl;
 
-	/* Search(QKMatch -> DMatch -> CScore -> Rank) */
-	/* QKMatch */
-	CKI = QKMatch(QM, KM, realnum_key);
-	//for (int i = 0; i < (_msize(CKI) / sizeof(CKI[0])); i++)	cout << "\nCKI：" << CKI[i] << ",";
-	//cout << endl;
+	for (int times = 1; times <= 10; times++)
+	{
+		clock_t start, finish;
+		start = clock();
+		Query2();
 
-	/* DMatch */
-	CFS = DMatch(CKI, _msize(CKI) / sizeof(CKI[0]));
-	//for (int i = 0; i < (_msize(CFS) / sizeof(CFS[0])); i++)	cout << "\nCFS：" << CFS[i] << ",";
-	//cout << endl;
+		/* Generate KM、QM */
+		GenerateKQM();
+		/*for (int i = 0; i<realnum_key; i++) cout << KM[i];
+		cout << endl;*/
+		//for (int i = 0; i<realnum_key; i++)	cout << QM[i];
+		cout << endl;
 
-	/* CSore */
-	Cscore();
 
-	/* Rank */
-	Rank();
 
+		/* Search(QKMatch -> DMatch -> CScore -> Rank) */
+		/* QKMatch */
+		CKI = QKMatch(QM, KM, realnum_key);
+		//for (int i = 0; i < (_msize(CKI) / sizeof(CKI[0])); i++)	cout << "\nCKI：" << CKI[i] << ",";
+		//cout << endl;
+
+		/* DMatch */
+		CFS = DMatch(CKI, _msize(CKI) / sizeof(CKI[0]));
+		//for (int i = 0; i < (_msize(CFS) / sizeof(CFS[0])); i++)	cout << "\nCFS：" << CFS[i] << ",";
+		//cout << endl;
+
+		/* CSore */
+		Cscore();
+
+		/* Rank */
+		Rank();
+
+		finish = clock();
+		cout << "Query Time " << times << "：" << double(finish-start) / CLOCKS_PER_SEC << "s" << endl;
+	}
+	/* User Input query word */
+	
+	
 	/* Free Memory */
 	SI.clear();
 	file_index.clear();
 	file_keyword.clear();
 	RList.clear();
 
+	
 	system("pause");
 	return 0;
 }
